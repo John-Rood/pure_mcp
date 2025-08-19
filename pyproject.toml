@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pure-mcp"
+dynamic = ["version"]
+description = "A lightweight, pure Python implementation of the Model Context Protocol client"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "John Rood"},
+    {name = "Osaro Igbinovia"},
+]
+maintainers = [
+    {name = "John Rood"},
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "anyio>=3.0.0",
+    "httpx>=0.25.0",
+    "httpx-sse>=0.3.0",
+    "pydantic>=2.0.0",
+    "jsonschema>=4.0.0",
+    "typing-extensions>=4.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "mypy>=1.0.0",
+    "ruff>=0.1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/John-Rood/pure-mcp"
+Repository = "https://github.com/John-Rood/pure-mcp"
+Issues = "https://github.com/John-Rood/pure-mcp/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pure_mcp*"]
+exclude = ["tests*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "pure_mcp._version.__version__"} 

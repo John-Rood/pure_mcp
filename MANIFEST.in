@@ -1,0 +1,8 @@
+include README.md
+include LICENSE
+include pyproject.toml
+recursive-include pure_mcp *.py
+recursive-include pure_mcp py.typed
+global-exclude __pycache__
+global-exclude *.py[co]
+global-exclude .DS_Store 
