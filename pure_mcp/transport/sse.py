@@ -1,6 +1,6 @@
 import logging
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, Union
 from urllib.parse import urljoin, urlparse
 
 import anyio
@@ -23,11 +23,11 @@ def remove_request_params(url: str) -> str:
 @asynccontextmanager
 async def sse_client(
     url: str,
-    headers: dict[str, Any] | None = None,
+    headers: Union[dict[str, Any], None] = None,
     timeout: float = 5,
     sse_read_timeout: float = 60 * 5,
     httpx_client_factory: McpHttpClientFactory = create_mcp_http_client,
-    auth: httpx.Auth | None = None,
+    auth: Union[httpx.Auth, None] = None,
 ):
     """
     Client transport for SSE.
@@ -42,8 +42,8 @@ async def sse_client(
         sse_read_timeout: Timeout for SSE read operations.
         auth: Optional HTTPX authentication handler.
     """
-    read_stream: MemoryObjectReceiveStream[SessionMessage | Exception]
-    read_stream_writer: MemoryObjectSendStream[SessionMessage | Exception]
+    read_stream: MemoryObjectReceiveStream[Union[SessionMessage, Exception]]
+    read_stream_writer: MemoryObjectSendStream[Union[SessionMessage, Exception]]
 
     write_stream: MemoryObjectSendStream[SessionMessage]
     write_stream_reader: MemoryObjectReceiveStream[SessionMessage]

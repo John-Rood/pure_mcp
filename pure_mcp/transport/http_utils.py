@@ -1,6 +1,6 @@
 """Utilities for creating standardized httpx AsyncClient instances."""
 
-from typing import Any, Protocol
+from typing import Any, Protocol, Union
 
 import httpx
 
@@ -10,16 +10,16 @@ __all__ = ["create_mcp_http_client"]
 class McpHttpClientFactory(Protocol):
     def __call__(
         self,
-        headers: dict[str, str] | None = None,
-        timeout: httpx.Timeout | None = None,
-        auth: httpx.Auth | None = None,
+        headers: Union[dict[str, str], None] = None,
+        timeout: Union[httpx.Timeout, None] = None,
+        auth: Union[httpx.Auth, None] = None,
     ) -> httpx.AsyncClient: ...
 
 
 def create_mcp_http_client(
-    headers: dict[str, str] | None = None,
-    timeout: httpx.Timeout | None = None,
-    auth: httpx.Auth | None = None,
+    headers: Union[dict[str, str], None] = None,
+    timeout: Union[httpx.Timeout, None] = None,
+    auth: Union[httpx.Auth, None] = None,
 ) -> httpx.AsyncClient:
     """Create a standardized httpx AsyncClient with MCP defaults.
 

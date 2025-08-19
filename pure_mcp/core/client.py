@@ -1,6 +1,6 @@
 import logging
 from datetime import timedelta
-from typing import Any, Protocol
+from typing import Any, Protocol, Union
 
 import anyio.lowlevel
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
@@ -23,7 +23,7 @@ class SamplingFnT(Protocol):
         self,
         context: RequestContext["ClientSession", Any],
         params: types.CreateMessageRequestParams,
-    ) -> types.CreateMessageResult | types.ErrorData: ...
+    ) -> Union[types.CreateMessageResult, types.ErrorData]: ...
 
 
 class ElicitationFnT(Protocol):
@@ -31,13 +31,13 @@ class ElicitationFnT(Protocol):
         self,
         context: RequestContext["ClientSession", Any],
         params: types.ElicitRequestParams,
-    ) -> types.ElicitResult | types.ErrorData: ...
+    ) -> Union[types.ElicitResult, types.ErrorData]: ...
 
 
 class ListRootsFnT(Protocol):
     async def __call__(
         self, context: RequestContext["ClientSession", Any]
-    ) -> types.ListRootsResult | types.ErrorData: ...
+    ) -> Union[types.ListRootsResult, types.ErrorData]: ...
 
 
 class LoggingFnT(Protocol):
@@ -50,12 +50,12 @@ class LoggingFnT(Protocol):
 class MessageHandlerFnT(Protocol):
     async def __call__(
         self,
-        message: RequestResponder[types.ServerRequest, types.ClientResult] | types.ServerNotification | Exception,
+        message: Union[RequestResponder[types.ServerRequest, types.ClientResult], types.ServerNotification, Exception],
     ) -> None: ...
 
 
 async def _default_message_handler(
-    message: RequestResponder[types.ServerRequest, types.ClientResult] | types.ServerNotification | Exception,
+    message: Union[RequestResponder[types.ServerRequest, types.ClientResult], types.ServerNotification, Exception],
 ) -> None:
     await anyio.lowlevel.checkpoint()
 
@@ -63,7 +63,7 @@ async def _default_message_handler(
 async def _default_sampling_callback(
     context: RequestContext["ClientSession", Any],
     params: types.CreateMessageRequestParams,
-) -> types.CreateMessageResult | types.ErrorData:
+) -> Union[types.CreateMessageResult, types.ErrorData]:
     return types.ErrorData(
         code=types.INVALID_REQUEST,
         message="Sampling not supported",
@@ -73,7 +73,7 @@ async def _default_sampling_callback(
 async def _default_elicitation_callback(
     context: RequestContext["ClientSession", Any],
     params: types.ElicitRequestParams,
-) -> types.ElicitResult | types.ErrorData:
+) -> Union[types.ElicitResult, types.ErrorData]:
     return types.ErrorData(
         code=types.INVALID_REQUEST,
         message="Elicitation not supported",
@@ -82,7 +82,7 @@ async def _default_elicitation_callback(
 
 async def _default_list_roots_callback(
     context: RequestContext["ClientSession", Any],
-) -> types.ListRootsResult | types.ErrorData:
+) -> Union[types.ListRootsResult, types.ErrorData]:
     return types.ErrorData(
         code=types.INVALID_REQUEST,
         message="List roots not supported",
@@ -95,7 +95,7 @@ async def _default_logging_callback(
     pass
 
 
-ClientResponse: TypeAdapter[types.ClientResult | types.ErrorData] = TypeAdapter(types.ClientResult | types.ErrorData)
+ClientResponse: TypeAdapter[Union[types.ClientResult, types.ErrorData]] = TypeAdapter(Union[types.ClientResult, types.ErrorData])
 
 
 class ClientSession(
@@ -109,15 +109,15 @@ class ClientSession(
 ):
     def __init__(
         self,
-        read_stream: MemoryObjectReceiveStream[SessionMessage | Exception],
+        read_stream: MemoryObjectReceiveStream[Union[SessionMessage, Exception]],
         write_stream: MemoryObjectSendStream[SessionMessage],
-        read_timeout_seconds: timedelta | None = None,
-        sampling_callback: SamplingFnT | None = None,
-        elicitation_callback: ElicitationFnT | None = None,
-        list_roots_callback: ListRootsFnT | None = None,
-        logging_callback: LoggingFnT | None = None,
-        message_handler: MessageHandlerFnT | None = None,
-        client_info: types.Implementation | None = None,
+        read_timeout_seconds: Union[timedelta, None] = None,
+        sampling_callback: Union[SamplingFnT, None] = None,
+        elicitation_callback: Union[ElicitationFnT, None] = None,
+        list_roots_callback: Union[ListRootsFnT, None] = None,
+        logging_callback: Union[LoggingFnT, None] = None,
+        message_handler: Union[MessageHandlerFnT, None] = None,
+        client_info: Union[types.Implementation, None] = None,
     ) -> None:
         super().__init__(
             read_stream,
@@ -132,7 +132,7 @@ class ClientSession(
         self._list_roots_callback = list_roots_callback or _default_list_roots_callback
         self._logging_callback = logging_callback or _default_logging_callback
         self._message_handler = message_handler or _default_message_handler
-        self._tool_output_schemas: dict[str, dict[str, Any] | None] = {}
+        self._tool_output_schemas: dict[str, Union[dict[str, Any], None]] = {}
 
     async def initialize(self) -> types.InitializeResult:
         sampling = types.SamplingCapability() if self._sampling_callback is not _default_sampling_callback else None
@@ -189,10 +189,10 @@ class ClientSession(
 
     async def send_progress_notification(
         self,
-        progress_token: str | int,
+        progress_token: Union[str, int],
         progress: float,
-        total: float | None = None,
-        message: str | None = None,
+        total: Union[float, None] = None,
+        message: Union[str, None] = None,
     ) -> None:
         """Send a progress notification."""
         await self.send_notification(
@@ -221,7 +221,7 @@ class ClientSession(
             types.EmptyResult,
         )
 
-    async def list_resources(self, cursor: str | None = None) -> types.ListResourcesResult:
+    async def list_resources(self, cursor: Union[str, None] = None) -> types.ListResourcesResult:
         """Send a resources/list request."""
         return await self.send_request(
             types.ClientRequest(
@@ -233,7 +233,7 @@ class ClientSession(
             types.ListResourcesResult,
         )
 
-    async def list_resource_templates(self, cursor: str | None = None) -> types.ListResourceTemplatesResult:
+    async def list_resource_templates(self, cursor: Union[str, None] = None) -> types.ListResourceTemplatesResult:
         """Send a resources/templates/list request."""
         return await self.send_request(
             types.ClientRequest(
@@ -284,9 +284,9 @@ class ClientSession(
     async def call_tool(
         self,
         name: str,
-        arguments: dict[str, Any] | None = None,
-        read_timeout_seconds: timedelta | None = None,
-        progress_callback: ProgressFnT | None = None,
+        arguments: Union[dict[str, Any], None] = None,
+        read_timeout_seconds: Union[timedelta, None] = None,
+        progress_callback: Union[ProgressFnT, None] = None,
     ) -> types.CallToolResult:
         """Send a tools/call request with optional progress callback support."""
 
@@ -332,7 +332,7 @@ class ClientSession(
             except SchemaError as e:
                 raise RuntimeError(f"Invalid schema for tool {name}: {e}")
 
-    async def list_prompts(self, cursor: str | None = None) -> types.ListPromptsResult:
+    async def list_prompts(self, cursor: Union[str, None] = None) -> types.ListPromptsResult:
         """Send a prompts/list request."""
         return await self.send_request(
             types.ClientRequest(
@@ -344,7 +344,7 @@ class ClientSession(
             types.ListPromptsResult,
         )
 
-    async def get_prompt(self, name: str, arguments: dict[str, str] | None = None) -> types.GetPromptResult:
+    async def get_prompt(self, name: str, arguments: Union[dict[str, str], None] = None) -> types.GetPromptResult:
         """Send a prompts/get request."""
         return await self.send_request(
             types.ClientRequest(
@@ -358,9 +358,9 @@ class ClientSession(
 
     async def complete(
         self,
-        ref: types.ResourceTemplateReference | types.PromptReference,
+        ref: Union[types.ResourceTemplateReference, types.PromptReference],
         argument: dict[str, str],
-        context_arguments: dict[str, str] | None = None,
+        context_arguments: Union[dict[str, str], None] = None,
     ) -> types.CompleteResult:
         """Send a completion/complete request."""
         context = None
@@ -381,7 +381,7 @@ class ClientSession(
             types.CompleteResult,
         )
 
-    async def list_tools(self, cursor: str | None = None) -> types.ListToolsResult:
+    async def list_tools(self, cursor: Union[str, None] = None) -> types.ListToolsResult:
         """Send a tools/list request."""
         result = await self.send_request(
             types.ClientRequest(
@@ -446,7 +446,7 @@ class ClientSession(
 
     async def _handle_incoming(
         self,
-        req: RequestResponder[types.ServerRequest, types.ClientResult] | types.ServerNotification | Exception,
+        req: Union[RequestResponder[types.ServerRequest, types.ClientResult], types.ServerNotification, Exception],
     ) -> None:
         """Handle incoming messages by forwarding to the message handler."""
         await self._message_handler(req)

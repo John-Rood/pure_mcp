@@ -3,7 +3,7 @@ Pure Python implementation of memory streams for MCP communication.
 No external dependencies required.
 """
 import asyncio
-from typing import Optional, TypeVar, Generic
+from typing import Optional, TypeVar, Generic, Tuple
 
 
 T = TypeVar('T')
@@ -73,7 +73,7 @@ class MemoryObjectReceiveStream(Generic[T]):
             raise StopAsyncIteration
 
 
-def create_memory_object_stream(max_buffer_size: int = 0) -> tuple[MemoryObjectSendStream[T], MemoryObjectReceiveStream[T]]:
+def create_memory_object_stream(max_buffer_size: int = 0) -> Tuple[MemoryObjectSendStream[T], MemoryObjectReceiveStream[T]]:
     """Create a connected pair of memory object streams."""
     send_stream = MemoryObjectSendStream[T](max_buffer_size)
     receive_stream = MemoryObjectReceiveStream[T](send_stream)

@@ -7,6 +7,7 @@ to support transport-specific features like resumability.
 
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from typing import Union
 
 from ..types.protocol import JSONRPCMessage, RequestId
 
@@ -19,20 +20,20 @@ ResumptionTokenUpdateCallback = Callable[[ResumptionToken], Awaitable[None]]
 class ClientMessageMetadata:
     """Metadata specific to client messages."""
 
-    resumption_token: ResumptionToken | None = None
-    on_resumption_token_update: Callable[[ResumptionToken], Awaitable[None]] | None = None
+    resumption_token: Union[ResumptionToken, None] = None
+    on_resumption_token_update: Union[Callable[[ResumptionToken], Awaitable[None]], None] = None
 
 
 @dataclass
 class ServerMessageMetadata:
     """Metadata specific to server messages."""
 
-    related_request_id: RequestId | None = None
+    related_request_id: Union[RequestId, None] = None
     # Request-specific context (e.g., headers, auth info)
-    request_context: object | None = None
+    request_context: Union[object, None] = None
 
 
-MessageMetadata = ClientMessageMetadata | ServerMessageMetadata | None
+MessageMetadata = Union[ClientMessageMetadata, ServerMessageMetadata, None]
 
 
 @dataclass

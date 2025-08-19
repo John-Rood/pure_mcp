@@ -5,6 +5,7 @@ This example demonstrates how to connect to an MCP server and perform basic oper
 """
 
 import asyncio
+from typing import Union
 from pure_mcp import ClientSession, sse_client, McpError
 
 
@@ -93,7 +94,7 @@ async def example_with_progress():
     """Example showing progress tracking for long-running operations."""
     server_url = "http://localhost:8080/sse"
     
-    async def progress_callback(progress: float, total: float | None, message: str | None):
+    async def progress_callback(progress: float, total: Union[float, None], message: Union[str, None]):
         """Handle progress updates."""
         percent = (progress / total * 100) if total else 0
         print(f"Progress: {percent:.1f}% - {message or 'Processing...'}")
