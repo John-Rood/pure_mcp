@@ -31,7 +31,7 @@ While the official MCP SDK is comprehensive, it comes with heavy dependencies an
 pip install pure-mcp
 
 # Or install from source
-git clone https://github.com/John-Rood/pure-mcp.git
+git clone https://github.com/John-Rood/pure_mcp.git
 cd pure-mcp
 pip install -e .
 
