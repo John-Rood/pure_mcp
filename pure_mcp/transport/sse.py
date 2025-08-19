@@ -71,40 +71,39 @@ async def sse_client(
                         try:
                             async for sse in event_source.aiter_sse():
                                 logger.debug(f"Received SSE event: {sse.event}")
-                                match sse.event:
-                                    case "endpoint":
-                                        endpoint_url = urljoin(url, sse.data)
-                                        logger.debug(f"Received endpoint URL: {endpoint_url}")
+                                if sse.event == "endpoint":
+                                    endpoint_url = urljoin(url, sse.data)
+                                    logger.debug(f"Received endpoint URL: {endpoint_url}")
 
-                                        url_parsed = urlparse(url)
-                                        endpoint_parsed = urlparse(endpoint_url)
-                                        if (
-                                            url_parsed.netloc != endpoint_parsed.netloc
-                                            or url_parsed.scheme != endpoint_parsed.scheme
-                                        ):
-                                            error_msg = (
-                                                f"Endpoint origin does not match connection origin: {endpoint_url}"
-                                            )
-                                            logger.error(error_msg)
-                                            raise ValueError(error_msg)
+                                    url_parsed = urlparse(url)
+                                    endpoint_parsed = urlparse(endpoint_url)
+                                    if (
+                                        url_parsed.netloc != endpoint_parsed.netloc
+                                        or url_parsed.scheme != endpoint_parsed.scheme
+                                    ):
+                                        error_msg = (
+                                            f"Endpoint origin does not match connection origin: {endpoint_url}"
+                                        )
+                                        logger.error(error_msg)
+                                        raise ValueError(error_msg)
 
-                                        task_status.started(endpoint_url)
+                                    task_status.started(endpoint_url)
 
-                                    case "message":
-                                        try:
-                                            message = types.JSONRPCMessage.model_validate_json(  # noqa: E501
-                                                sse.data
-                                            )
-                                            logger.debug(f"Received server message: {message}")
-                                        except Exception as exc:
-                                            logger.exception("Error parsing server message")
-                                            await read_stream_writer.send(exc)
-                                            continue
+                                elif sse.event == "message":
+                                    try:
+                                        message = types.JSONRPCMessage.model_validate_json(  # noqa: E501
+                                            sse.data
+                                        )
+                                        logger.debug(f"Received server message: {message}")
+                                    except Exception as exc:
+                                        logger.exception("Error parsing server message")
+                                        await read_stream_writer.send(exc)
+                                        continue
 
-                                        session_message = SessionMessage(message)
-                                        await read_stream_writer.send(session_message)
-                                    case _:
-                                        logger.warning(f"Unknown SSE event: {sse.event}")
+                                    session_message = SessionMessage(message)
+                                    await read_stream_writer.send(session_message)
+                                else:
+                                    logger.warning(f"Unknown SSE event: {sse.event}")
                         except Exception as exc:
                             logger.exception("Error in sse_reader")
                             await read_stream_writer.send(exc)

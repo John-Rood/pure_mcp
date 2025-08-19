@@ -418,28 +418,31 @@ class ClientSession(
             lifespan_context=None,
         )
 
-        match responder.request.root:
-            case types.CreateMessageRequest(params=params):
-                with responder:
-                    response = await self._sampling_callback(ctx, params)
-                    client_response = ClientResponse.validate_python(response)
-                    await responder.respond(client_response)
+        request_root = responder.request.root
+        
+        if isinstance(request_root, types.CreateMessageRequest):
+            params = request_root.params
+            with responder:
+                response = await self._sampling_callback(ctx, params)
+                client_response = ClientResponse.validate_python(response)
+                await responder.respond(client_response)
 
-            case types.ElicitRequest(params=params):
-                with responder:
-                    response = await self._elicitation_callback(ctx, params)
-                    client_response = ClientResponse.validate_python(response)
-                    await responder.respond(client_response)
+        elif isinstance(request_root, types.ElicitRequest):
+            params = request_root.params
+            with responder:
+                response = await self._elicitation_callback(ctx, params)
+                client_response = ClientResponse.validate_python(response)
+                await responder.respond(client_response)
 
-            case types.ListRootsRequest():
-                with responder:
-                    response = await self._list_roots_callback(ctx)
-                    client_response = ClientResponse.validate_python(response)
-                    await responder.respond(client_response)
+        elif isinstance(request_root, types.ListRootsRequest):
+            with responder:
+                response = await self._list_roots_callback(ctx)
+                client_response = ClientResponse.validate_python(response)
+                await responder.respond(client_response)
 
-            case types.PingRequest():
-                with responder:
-                    return await responder.respond(types.ClientResult(root=types.EmptyResult()))
+        elif isinstance(request_root, types.PingRequest):
+            with responder:
+                return await responder.respond(types.ClientResult(root=types.EmptyResult()))
 
     async def _handle_incoming(
         self,
@@ -451,8 +454,6 @@ class ClientSession(
     async def _received_notification(self, notification: types.ServerNotification) -> None:
         """Handle notifications from the server."""
         # Process specific notification types
-        match notification.root:
-            case types.LoggingMessageNotification(params=params):
-                await self._logging_callback(params)
-            case _:
-                pass
+        if isinstance(notification.root, types.LoggingMessageNotification):
+            params = notification.root.params
+            await self._logging_callback(params)
