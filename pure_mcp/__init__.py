@@ -10,6 +10,7 @@ from .core.client import ClientSession
 
 # Transport layers
 from .transport.sse import sse_client
+from .transport.streamable_http import streamablehttp_client
 from .transport.streams import (
     MemoryObjectSendStream,
     MemoryObjectReceiveStream,
@@ -44,6 +45,7 @@ __all__ = [
     "ClientSession",
     # Transport
     "sse_client",
+    "streamablehttp_client",
     "MemoryObjectSendStream",
     "MemoryObjectReceiveStream", 
     "create_memory_object_stream",
